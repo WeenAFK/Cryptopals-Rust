@@ -1,6 +1,8 @@
 use std::ops::BitXor;
 
 use super::cipher;
+use super::freq;
+use super::freq::RatedCipher;
 
 
 pub fn xor_bits(buf1: &[u8], buf2: &[u8]) -> Vec<u8> {
@@ -43,4 +45,10 @@ impl cipher::Cipher for XorCipher {
     fn decrypt(&self, text: &[u8]) -> Vec<u8> {
         self.encrypt(text) // xor undoes itself
     }
+}
+
+/// Uses frequency analysis to guess which single-character XorCipher is most suited to decrypting
+/// the given ciphertext.
+pub fn find_best(ciphertext: &[u8]) -> Option<RatedCipher<XorCipher>> {
+    freq::find_best(ciphertext, (0u8..128).map(XorCipher::new_byte))
 }

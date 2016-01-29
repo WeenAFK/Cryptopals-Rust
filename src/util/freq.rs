@@ -1,5 +1,7 @@
 //! Utilities for frequency analysis
 
+use std::cmp::*;
+
 use super::cipher;
 
 
@@ -34,6 +36,7 @@ fn convert_table(tab: &FreqTableVerbose) -> FreqTable {
     new
 }
 
+// FIXME: Unnecessary runtime computation
 fn english_table() -> FreqTable {
     convert_table(&FREQS_ENG_VERBOSE)
 }
@@ -62,14 +65,40 @@ impl FreqTable {
 
 }
 
-struct RatedCipher<T: cipher::Cipher> {
-    cipher: T,
-    score: f64,
+pub struct RatedCipher<T: cipher::Cipher> {
+    pub cipher: T,
+    pub score: f64,
+}
+
+impl<T: cipher::Cipher> PartialEq for RatedCipher<T> {
+    fn eq(&self, _: &RatedCipher<T>) -> bool {
+        false
+    }
+}
+
+impl<T: cipher::Cipher> Eq for RatedCipher<T> {}
+
+impl<T: cipher::Cipher> PartialOrd for RatedCipher<T> {
+    fn partial_cmp(&self, other: &RatedCipher<T>) -> Option<Ordering> {
+        if self.score > other.score {
+            Some(Ordering::Greater)
+        } else if self.score < other.score {
+            Some(Ordering::Less)
+        } else {
+            Some(Ordering::Equal)
+        }
+    }
+}
+
+impl<T: cipher::Cipher> Ord for RatedCipher<T> {
+    fn cmp(&self, other: &RatedCipher<T>) -> Ordering {
+        self.partial_cmp(other).unwrap()
+    }
 }
 
 /// Uses frequency analysis to guess which cipher is most suited to decrypting the given
 /// ciphertext.
-pub fn find_best<T, I>(ciphertext: &[u8], candidates: I) -> Option<T>
+pub fn find_best<T, I>(ciphertext: &[u8], candidates: I) -> Option<RatedCipher<T>>
         where T: cipher::Cipher,
               I: Iterator<Item=T> + Sized
 {
@@ -78,6 +107,6 @@ pub fn find_best<T, I>(ciphertext: &[u8], candidates: I) -> Option<T>
             String::from_utf8(cipher.decrypt(ciphertext)).ok()
                 .map(|t| RatedCipher{ cipher:cipher, score: FreqTable::new(&t).score() })
         })
-        .max_by_key(|rc| (rc.score * 10000.0) as u64) // u64 is Ord but f64 is not
-        .map(|rc| rc.cipher)
+        .max()
+        //.map(|rc| rc.cipher)
 }
