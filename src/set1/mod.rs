@@ -1,8 +1,8 @@
-pub mod p1;
-pub mod p2;
-pub mod p3;
-pub mod p4;
-pub mod p5;
-pub mod p6;
-pub mod p7;
-pub mod p8;
+pub mod c1;
+pub mod c2;
+pub mod c3;
+pub mod c4;
+pub mod c5;
+pub mod c6;
+pub mod c7;
+pub mod c8;

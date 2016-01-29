@@ -1,7 +1,7 @@
 /// Since all characters used in Base64 happen to be only 1 byte in
 /// UTF-8, to get a Base64 character, just do an index lookup on this
 /// table.
-static TAB_BASE64:&'static [u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static TAB_BASE64: &'static [u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 pub trait ToBase64 {
     fn to_base64(&self) -> String;
@@ -9,7 +9,7 @@ pub trait ToBase64 {
 
 impl ToBase64 for Vec<u8> {
     fn to_base64(&self) -> String {
-        // A fairly rudimentary base64 conversion
+        // A fairly simple base64 conversion
         let itr = (&self[..]).chunks(3)
             .map(|c:&[u8]| {
                 let mut chunk:u32 = 0;
