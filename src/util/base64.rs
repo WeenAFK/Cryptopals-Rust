@@ -11,18 +11,21 @@ impl Base64Parseable for str {
         }
 
         let map = inverse_map();
+
+        // Note: it's strictly incorrect to use as_bytes() instead of chars() due to UTF-8,
+        // but I'm lazy and for our use cases it doesn't matter.
         self.as_bytes().chunks(4)
             .map(|c:&[u8]| {
                 // 3 bytes per 4 characters; each character represents 6 bits.
                 // For each padding character we lose a byte.
                 // We forward through a u32 containing the 24-bit word in the higher (leftmost)
                 // bits and size data in the least significant (rightmost) bits.
-                let mut bytes = 3u32;
-                if c[3] == '=' as u8 { bytes -= 1; } // check pad 1
-                if c[2] == '=' as u8 { bytes -= 1; } // check pad 2
-                let mut word = bytes;
+                let mut chars = 4u32;
+                if c[3] == '=' as u8 { chars -= 1; } // pad 1
+                if c[2] == '=' as u8 { chars -= 1; } // pad 2
+                let mut word = chars - 1;
 
-                for i in 0..bytes {
+                for i in 0..chars {
                     let val = map.get(&c[i as usize]);
                     if val.is_none() { return Err("Not a valid Base64 string!"); }
                     word |= (*val.unwrap() as u32) << (26 - 6*i);
