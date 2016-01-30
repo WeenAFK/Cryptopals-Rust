@@ -22,6 +22,13 @@ pub fn xor<'a, 'b, T, U, I, J>(itr1: I, itr2: J) -> Vec<<T as BitXor<U>>::Output
     itr1.zip(itr2).map(|(a,b)| a ^ b).collect()
 }
 
+pub fn hamming_distance(str1: &[u8], str2: &[u8]) -> u32 {
+    str1.iter().zip(str2.iter())
+        .map(|(a,b)| (a ^ b).count_ones())
+        .fold(0u32, |acc,val| acc + val)
+}
+
+
 
 pub struct XorCipher {
     pub key: Vec<u8>

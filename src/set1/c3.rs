@@ -10,5 +10,7 @@ pub fn main() {
     let ciphertext = IN.parse_hex().unwrap();
     let best = xor::find_best(&ciphertext).unwrap();
     let plaintext = best.cipher.decrypt_str(&ciphertext).unwrap();
-    println!("Best is \"{}\" with key {:?}.", plaintext, best.cipher.key)
+    println!("Best is: \"{}\" with key {:?}.", plaintext, best.cipher.key)
+
+    // This program yields: Best is: "Cooking MC's like a pound of bacon" with key [88].
 }
