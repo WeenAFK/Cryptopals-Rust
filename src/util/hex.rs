@@ -3,8 +3,8 @@
 /// be filled with zeroes.
 pub fn parse_hex_str(string: &str) -> Result<Vec<u8>, &'static str> {
     string.chars()
-        .map(|ch| { ch.to_digit(16).map(|a_u32| { a_u32 as u8 }) })
-        .map(|o| { o.ok_or("Input is not a valid hex string!") })
+        .map(|ch| ch.to_digit(16).map(|a_u32| { a_u32 as u8 }))
+        .map(|o| o.ok_or("Input is not a valid hex string!"))
         .collect::<Result<Vec<u8>, &str>>() // collect is awesome
         .map(|vec:Vec<u8>| {
             // merge hex digit pairs into single bytes

@@ -1,5 +1,7 @@
 use util::hex::HexParseable;
+use util::hex::ToHex;
 use util::base64::ToBase64;
+use util::base64::Base64Parseable;
 
 // SET 1, CHALLENGE 1: http://cryptopals.com/sets/1/challenges/1/
 
@@ -11,6 +13,9 @@ pub fn main() {
         Ok(bytes) => {
             println!("Result:   {}", bytes.to_base64());
             println!("Expected: {}", EXPECTED_OUT);
+
+            println!("Original:      {}", INPUT);
+            println!("Reconstructed: {}", bytes.to_base64().parse_base64().unwrap().to_hex());
         },
         Err(msg)  => println!("{}", msg)
     }

@@ -1,7 +1,61 @@
+use std::collections::HashMap;
+
+pub trait Base64Parseable {
+    fn parse_base64(&self) -> Result<Vec<u8>, &'static str>;
+}
+
+impl Base64Parseable for str {
+    fn parse_base64(&self) -> Result<Vec<u8>, &'static str> {
+        if self.len() % 4 != 0 {
+            return Err("Length not a multiple of 4!")
+        }
+
+        let map = inverse_map();
+        self.as_bytes().chunks(4)
+            .map(|c:&[u8]| {
+                // 3 bytes per 4 characters; each character represents 6 bits.
+                // For each padding character we lose a byte.
+                // We forward through a u32 containing the 24-bit word in the higher (leftmost)
+                // bits and size data in the least significant (rightmost) bits.
+                let mut bytes = 3u32;
+                if c[3] == '=' as u8 { bytes -= 1; } // check pad 1
+                if c[2] == '=' as u8 { bytes -= 1; } // check pad 2
+                let mut word = bytes;
+
+                for i in 0..bytes {
+                    let val = map.get(&c[i as usize]);
+                    if val.is_none() { return Err("Not a valid Base64 string!"); }
+                    word |= (*val.unwrap() as u32) << (26 - 6*i);
+                }
+
+                Ok(word)
+            }).collect::<Result<Vec<u32>, &'static str>>()
+            .map(|words| {
+                let mut vec = Vec::with_capacity(3 * words.len());
+                for word in words {
+                    let len = word & 0b11;
+                    for i in 0..len {
+                        let byte = word >> (24 - 8*i);
+                        vec.push(byte as u8);
+                    }
+                }
+                vec
+            })
+    }
+}
+
 /// Since all characters used in Base64 happen to be only 1 byte in
 /// UTF-8, to get a Base64 character, just do an index lookup on this
 /// table.
 static TAB_BASE64: &'static [u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+fn inverse_map() -> HashMap<u8, u8> {
+    let mut map = HashMap::<u8, u8>::new();
+    for (i,ch) in TAB_BASE64.iter().enumerate() {
+        map.insert(*ch, i as u8);
+    }
+    map
+}
 
 pub trait ToBase64 {
     fn to_base64(&self) -> String;
@@ -19,7 +73,8 @@ impl ToBase64 for Vec<u8> {
                 chunk += c.len() as u32;
                 chunk
             });
-        let mut base64: Vec<u8> = Vec::new();
+        let len = if self.len() % 3 == 0 { 4 * (self.len() / 3) } else { 4 * (self.len() / 3) + 4 };
+        let mut base64: Vec<u8> = Vec::with_capacity(len);
         for chunk in itr {
             let len:u32 = chunk & 0b11;
             let chars:u32 = len+1;
