@@ -9,4 +9,5 @@ fn main() {
     cryptopals::set1::c3::main();
     cryptopals::set1::c4::main();
     cryptopals::set1::c5::main();
+    cryptopals::set1::c6::main();
 }

@@ -9,10 +9,9 @@ use util::xor;
 // SET 1, CHALLENGE 4: http://cryptopals.com/sets/1/challenges/4/
 
 pub fn main() {
-    let f = File::open("src/set1/4.txt");
+    let f = File::open("res/1-4.txt");
     if f.is_err() { return; }
-    let f = f.unwrap();
-    let reader = BufReader::new(f);
+    let reader = BufReader::new(f.unwrap());
 
     let res = reader.lines()
         .filter_map(|line| line.ok()) // read each line; filter the Results

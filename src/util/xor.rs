@@ -1,4 +1,5 @@
 use std::ops::BitXor;
+use std::cmp::Ordering;
 
 use super::cipher;
 use super::freq;
@@ -22,10 +23,16 @@ pub fn xor<'a, 'b, T, U, I, J>(itr1: I, itr2: J) -> Vec<<T as BitXor<U>>::Output
     itr1.zip(itr2).map(|(a,b)| a ^ b).collect()
 }
 
-pub fn hamming_distance(str1: &[u8], str2: &[u8]) -> u32 {
-    str1.iter().zip(str2.iter())
-        .map(|(a,b)| (a ^ b).count_ones())
-        .fold(0u32, |acc,val| acc + val)
+/// Returns a None if the inputs are of unequal length. returns a None if the given slices are of
+/// unequal length.
+pub fn hamming_distance(a: &[u8], b: &[u8]) -> Option<u32> {
+    if a.len() != b.len() {
+        None
+    } else {
+        Some(a.iter().zip(b.iter())
+            .map(|(a,b)| (a ^ b).count_ones())
+            .fold(0u32, |acc,val| acc + val))
+    }
 }
 
 
@@ -59,3 +66,43 @@ impl cipher::Cipher for XorCipher {
 pub fn find_best(ciphertext: &[u8]) -> Option<RatedCipher<XorCipher>> {
     freq::find_best(ciphertext, (0u8..128).map(XorCipher::new_byte))
 }
+
+/// Returns a Vec containing, in order of most to least likely, potential key sizes which may have
+/// been used to encrypt the given ciphertext using a Vigenere Xor cipher.
+pub fn find_key_size(ciphertext: &[u8]) -> Vec<usize> {
+    let mut list: Vec<(usize, f64)> = (1usize..40)
+        .map(|size| (size, key_size_rating(ciphertext, size)))
+        .take_while(|&(_,rating)| rating.is_some())
+        .map(|(size,rating)| (size, rating.unwrap()))
+        .collect();
+    list.sort_by(|&(_,a), &(_,b)| a.partial_cmp(&b).unwrap_or(Ordering::Equal));
+    list.iter()
+        .inspect(|&&(size,rating)| println!("Size: {}, Rating: {}", size, rating))
+        .map(|&(size,_)| size)
+        .collect::<Vec<usize>>()
+}
+
+/// Finds the rating for a key of size key_size for the given ciphertext. The result is given as
+/// an Option because currently the used algorithm doesn't support key lengths greater than
+/// ciphertext.len() / 2. The smaller the returned f64, the better.
+fn key_size_rating(ciphertext: &[u8], key_size: usize) -> Option<f64> {
+    let (count, hamming) = ciphertext.chunks(2 * key_size).take(1)
+        .filter_map(|s| {
+            if s.len() < 2 * key_size {
+                None
+            } else {
+                hamming_distance(&s[0..key_size], &s[key_size..2*key_size])
+            }
+        })
+        .fold((0usize, 0u32), |(n,acc), dist| (n + key_size, acc + dist));
+
+    if count == 0 {
+        None
+    } else {
+        Some(hamming as f64 / count as f64)
+    }
+    //let dist = hamming_distance(&ciphertext[0..key_size], &ciphertext[key_size..2*key_size]);
+    //Some(dist.unwrap() as f64 / key_size as f64)
+}
+
+//pub fn vigenere_for(ciphertext: &[u8], )

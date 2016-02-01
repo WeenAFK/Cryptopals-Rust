@@ -28,6 +28,8 @@ static FREQS_ENG_VERBOSE: FreqTableVerbose =
         (1.000, '.' as u8) // '.' placeholds for all punctuation
     ];
 
+// Unused to unnecessary runtime computation
+#[allow(dead_code)]
 fn convert_table(tab: &FreqTableVerbose) -> FreqTable {
     let mut new: FreqTable = FreqTable { table: [0f64; 28] };
     for i in 0..tab.len() {
@@ -36,7 +38,8 @@ fn convert_table(tab: &FreqTableVerbose) -> FreqTable {
     new
 }
 
-// FIXME: Unnecessary runtime computation
+// Unused due to unnecessary runtime computation
+#[allow(dead_code)]
 fn english_table() -> FreqTable {
     convert_table(&FREQS_ENG_VERBOSE)
 }
@@ -58,9 +61,14 @@ impl FreqTable {
     }
 
     pub fn score(&self) -> f64 {
+        /*
         english_table().table.iter().zip(self.table.iter())
             .map(|(a,b)| a * b)
             .fold(0f64, |acc,val| acc + val)
+        */
+        FREQS_ENG_VERBOSE.iter().map(|&(freq, _)| freq).zip(self.table.iter())
+            .map(|(a,b)| a * b)
+            .fold(0f64, |acc, val| acc + val)
     }
 
 }
