@@ -47,14 +47,24 @@ fn english_table() -> FreqTable {
 impl FreqTable {
 
     pub fn new(text: &String) -> FreqTable {
+        FreqTable::new_skipped(text, 0, 1)
+    }
+
+    pub fn new_skipped(text: &String, offset: usize, key_size: usize) -> FreqTable {
         let mut tab: FreqTable = FreqTable { table: [0f64; 28] };
-        for c in text.chars() {
+        let mut itr = text.chars().skip(offset);
+        while let Some(c) = itr.next() {
             match c {
                 'a'...'z' => tab.table[c as usize - 'a' as usize] += 1f64,
                 'A'...'Z' => tab.table[c as usize - 'A' as usize] += 1f64,
                 ' '       => tab.table[26] += 1f64,
                 '.' | ',' | '!' | '?' => tab.table[27] += 1f64,
                 _ => (),
+            }
+            for _ in 0..key_size { // skip key_size-1 entries
+                if itr.next().is_none() {
+                    return tab;
+                }
             }
         }
         tab
@@ -117,4 +127,29 @@ pub fn find_best<T, I>(ciphertext: &[u8], candidates: I) -> Option<RatedCipher<T
         })
         .max()
         //.map(|rc| rc.cipher)
+}
+
+/// Uses frequency analysis to guess which cipher is most suited to decrypting the given
+/// ciphertext.
+pub fn find_best_gen<T, I>(ciphertext: &[u8], candidates: I, key_size: usize) -> Vec<RatedCipher<T>>
+        where T: cipher::Cipher + Clone,
+              I: Iterator<Item=T> + Sized
+{
+    let mut best = Vec::with_capacity(key_size);
+    let itr = candidates.filter_map(|cipher| {
+            String::from_utf8(cipher.decrypt(ciphertext)).ok()
+                .map(|text| (cipher, text))
+    });
+    for (cipher, text) in itr {
+        for i in 0..key_size {
+            let score = FreqTable::new_skipped(&text, i, key_size).score();
+            if best.len() <= i {
+                best.push(RatedCipher{ cipher:cipher.clone(), score:score });
+            } else if best[i].score < score {
+                best[i] = RatedCipher{ cipher:cipher.clone(), score:score };
+            }
+        }
+    }
+
+    best
 }
