@@ -112,11 +112,12 @@ fn key_size_rating(ciphertext: &[u8], key_size: usize) -> Option<f64> {
     //Some(dist.unwrap() as f64 / key_size as f64)
 }
 
-pub fn decrypt_vigenere(ciphertext: &[u8], key_size: usize) -> Vec<u8> {
+/// Attempts to decrypt the given ciphertext using the best-guess key of a specified length.
+/// Returns a tuple containing the best-guess key and the decrypted text.
+pub fn find_key_vigenere(ciphertext: &[u8], key_size: usize) -> XorCipher {
     let key = freq::find_best_gen(ciphertext, (0u8..128).map(XorCipher::new_byte), key_size)
         .iter()
         .map(|rc| rc.cipher.key[0])
         .collect::<Vec<u8>>();
-    let cipher = XorCipher::new_byte_arr(key);
-    cipher.decrypt(ciphertext)
+    XorCipher::new_byte_arr(key)
 }
