@@ -76,22 +76,23 @@ pub fn find_best(ciphertext: &[u8]) -> Option<RatedCipher<XorCipher>> {
     freq::find_best(ciphertext, (0u8..128).map(XorCipher::new_byte))
 }
 
-/// Returns a Vec containing, in order of most to least likely, potential key sizes which may have
-/// been used to encrypt the given ciphertext using a Vigenere Xor cipher.
+/// Returns the best-guess key size for the given ciphertext encrypted using a vigenere xor cipher.
 pub fn find_key_size(ciphertext: &[u8]) -> usize {
     let mut list: Vec<(usize, f64)> = (1usize..)
         .map(|size| (size, key_size_rating(ciphertext, size)))
         .take_while(|&(_,rating)| rating.is_some())
         .map(|(size,rating)| (size, rating.unwrap()))
         .collect();
-    list.sort_by(|&(_,a), &(_,b)| a.partial_cmp(&b).unwrap_or(Ordering::Equal));
-    //println!("LIST: {:?}", list);
+    list.sort_by(|&(_,a), &(_,b)| a.partial_cmp(&b).unwrap_or(Ordering::Equal)); // best to worst
     let mut iter = list.iter().map(|&(size,_)| size);
+
+    // Some of the best keys may have lengths which are multiples of the true key size (so we may
+    // end up with a key with cycling characters). To avoid this, we try to find the gcd of the
+    // best keys and stop when we've narrowed ourselves down sufficiently.
     let mut factors = math::factors(iter.next().unwrap());
     for num in iter {
         let factors2 = math::factors(num);
         let intersection = factors.intersection(&factors2).cloned().collect::<HashSet<usize>>();
-        //println!("FACTORS: {:?}, NEXT: {:?}, INTERSECTION: {:?}", factors, factors2, intersection);
         if intersection.len() == 2 {
             // We've narrowed down our factors to {1, some_gcd}
             return *intersection.iter().max().unwrap();
@@ -128,12 +129,21 @@ fn key_size_rating(ciphertext: &[u8], key_size: usize) -> Option<f64> {
     //Some(dist.unwrap() as f64 / key_size as f64)
 }
 
-/// Attempts to decrypt the given ciphertext using the best-guess key of a specified length.
-/// Returns a tuple containing the best-guess key and the decrypted text.
-pub fn find_key_vigenere(ciphertext: &[u8], key_size: usize) -> XorCipher {
+/// Returns the best-guess cipher for the specified key length.
+fn find_vigenere_cipher(ciphertext: &[u8], key_size: usize) -> XorCipher {
     let key = freq::find_best_gen(ciphertext, (0u8..128).map(XorCipher::new_byte), key_size)
         .iter()
         .map(|rc| rc.cipher.key[0])
         .collect::<Vec<u8>>();
     XorCipher::new_byte_arr(key)
+}
+
+/// Attempts a vigenere xor decryption on the given ciphertext. Returns a tuple containing
+/// (to our best guess) the key and decrypted pliantext.
+pub fn decrypt_vigenere(ciphertext: &[u8]) -> (String, String) {
+    let key_size = find_key_size(ciphertext);
+    let cipher = find_vigenere_cipher(ciphertext, key_size);
+    let key = String::from_utf8(cipher.key.clone()).unwrap();
+    let plaintext = cipher.decrypt_str(ciphertext).unwrap();
+    (key, plaintext)
 }
