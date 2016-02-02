@@ -1,10 +1,12 @@
 use std::ops::BitXor;
 use std::cmp::Ordering;
+use std::collections::HashSet;
 
 use util::cipher;
 use util::cipher::Cipher;
 use util::freq;
 use util::freq::RatedCipher;
+use util::math;
 
 
 pub fn xor_bits(buf1: &[u8], buf2: &[u8]) -> Vec<u8> {
@@ -76,17 +78,31 @@ pub fn find_best(ciphertext: &[u8]) -> Option<RatedCipher<XorCipher>> {
 
 /// Returns a Vec containing, in order of most to least likely, potential key sizes which may have
 /// been used to encrypt the given ciphertext using a Vigenere Xor cipher.
-pub fn find_key_size(ciphertext: &[u8]) -> Vec<usize> {
-    let mut list: Vec<(usize, f64)> = (1usize..40)
+pub fn find_key_size(ciphertext: &[u8]) -> usize {
+    let mut list: Vec<(usize, f64)> = (1usize..)
         .map(|size| (size, key_size_rating(ciphertext, size)))
         .take_while(|&(_,rating)| rating.is_some())
         .map(|(size,rating)| (size, rating.unwrap()))
         .collect();
     list.sort_by(|&(_,a), &(_,b)| a.partial_cmp(&b).unwrap_or(Ordering::Equal));
-    list.iter()
-        //.inspect(|&&(size,rating)| println!("Size: {}, Rating: {}", size, rating))
-        .map(|&(size,_)| size)
-        .collect::<Vec<usize>>()
+    //println!("LIST: {:?}", list);
+    let mut iter = list.iter().map(|&(size,_)| size);
+    let mut factors = math::factors(iter.next().unwrap());
+    for num in iter {
+        let factors2 = math::factors(num);
+        let intersection = factors.intersection(&factors2).cloned().collect::<HashSet<usize>>();
+        //println!("FACTORS: {:?}, NEXT: {:?}, INTERSECTION: {:?}", factors, factors2, intersection);
+        if intersection.len() == 2 {
+            // We've narrowed down our factors to {1, some_gcd}
+            return *intersection.iter().max().unwrap();
+        } else if intersection.len() == 1 {
+            // We've narrowed down too far; go back
+            return *factors.iter().max().unwrap();
+        } else {
+            factors = intersection;
+        }
+    }
+    *factors.iter().max().unwrap()
 }
 
 /// Finds the rating for a key of size key_size for the given ciphertext. The result is given as

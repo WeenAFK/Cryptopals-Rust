@@ -5,7 +5,6 @@ use std::fs::File;
 use util::base64::Base64Parseable;
 use util::cipher::Cipher;
 use util::xor;
-use util::xor::XorCipher;
 
 // SET 1, CHALLENGE 6: http://cryptopals.com/sets/1/challenges/6/
 
@@ -21,24 +20,12 @@ pub fn main() {
 
     let input = try_unwrap!(reader.lines().collect::<Result<String, _>>());
     let bytes = try_unwrap!(input.parse_base64());
-    let candidates = xor::find_key_size(&bytes);
+    let key_size = xor::find_key_size(&bytes);
+    let cipher = xor::find_key_vigenere(&bytes, key_size);
+    let key = String::from_utf8(cipher.key.clone()).unwrap();
+    let plaintext = cipher.decrypt_str(&bytes).unwrap();
 
-    //println!("Candidate sizes: {:?}", candidates);
-
-    let start = 28usize;
-    let range = 1;
-    for i in start..(start+range) {
-        let cipher = xor::find_key_vigenere(&bytes, i);
-        let key = String::from_utf8(cipher.key.clone()).unwrap();
-        match cipher.decrypt_str(&bytes[0..10]) {
-            Some(text) => println!("Key size: {}, key: \"{}\", decrypted: {}", i, key, text),
-            None       => println!("Key size {} has no valid decryption.", i)
-        }
-    }
-
-    let key = b"Terminator X: Bring the noise";
-    let cipher = XorCipher::new_byte_arr(key.to_vec());
-    println!("Our winner is: {}", cipher.decrypt_str(&bytes).unwrap());
+    println!("Key size: {}; key: \"{}\"; plaintext: {}", key_size, key, plaintext);
 }
 
 #[test]

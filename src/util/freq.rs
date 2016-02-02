@@ -53,21 +53,19 @@ impl FreqTable {
     pub fn new_skipped(text: &String, offset: usize, key_size: usize) -> FreqTable {
         let mut tab: FreqTable = FreqTable { table: [0f64; 28] };
         let mut itr = text.chars().skip(offset);
-        while let Some(c) = itr.next() {
-            match c {
-                'a'...'z' => tab.table[c as usize - 'a' as usize] += 1f64,
-                'A'...'Z' => tab.table[c as usize - 'A' as usize] += 1f64,
-                ' '       => tab.table[26] += 1f64,
-                '.' | ',' | '!' | '?' => tab.table[27] += 1f64,
-                _ => (),
-            }
-            for _ in 0..key_size { // skip key_size-1 entries
-                if itr.next().is_none() {
-                    return tab;
-                }
-            }
-        }
+        if let Some(c) = itr.next() { FreqTable::tally(&mut tab, c); }
+        while let Some(c) = itr.nth(key_size-1) { FreqTable::tally(&mut tab, c); }
         tab
+    }
+
+    fn tally(tab: &mut FreqTable, c: char) {
+        match c {
+            'a'...'z' => tab.table[c as usize - 'a' as usize] += 1f64,
+            'A'...'Z' => tab.table[c as usize - 'A' as usize] += 1f64,
+            ' '       => tab.table[26] += 1f64,
+            '.' | ',' | '!' | '?' => tab.table[27] += 1f64,
+            _ => (),
+        }
     }
 
     pub fn score(&self) -> f64 {
@@ -131,6 +129,7 @@ pub fn find_best<T, I>(ciphertext: &[u8], candidates: I) -> Option<RatedCipher<T
 
 /// Uses frequency analysis to guess which cipher is most suited to decrypting the given
 /// ciphertext.
+/// (find_best_gen == find_best, generalised)
 pub fn find_best_gen<T, I>(ciphertext: &[u8], candidates: I, key_size: usize) -> Vec<RatedCipher<T>>
         where T: cipher::Cipher + Clone,
               I: Iterator<Item=T> + Sized
@@ -143,7 +142,7 @@ pub fn find_best_gen<T, I>(ciphertext: &[u8], candidates: I, key_size: usize) ->
     for (cipher, text) in itr {
         for i in 0..key_size {
             let score = FreqTable::new_skipped(&text, i, key_size).score();
-            if best.len() <= i {
+            if best.len() == i {
                 best.push(RatedCipher{ cipher:cipher.clone(), score:score });
             } else if best[i].score < score {
                 best[i] = RatedCipher{ cipher:cipher.clone(), score:score };
