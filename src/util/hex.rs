@@ -1,11 +1,15 @@
+use std::io;
+
+use util::ioutil;
+
 /// Attempts to parse a hexadecimal string.
 /// If the input string has an odd number of characters, the remaining bits in the last byte will
 /// be filled with zeroes.
-pub fn parse_hex_str(string: &str) -> Result<Vec<u8>, &'static str> {
+pub fn parse_hex_str(string: &str) -> io::Result<Vec<u8>> {
     string.chars()
         .map(|ch| ch.to_digit(16).map(|a_u32| { a_u32 as u8 }))
-        .map(|o| o.ok_or("Input is not a valid hex string!"))
-        .collect::<Result<Vec<u8>, &str>>() // collect is awesome
+        .map(|o| o.ok_or_else(|| ioutil::error("Input is not a valid hex string!")))
+        .collect::<io::Result<Vec<u8>>>() // collect is awesome
         .map(|vec:Vec<u8>| {
             // merge hex digit pairs into single bytes
             (&vec[..]).chunks(2)
@@ -22,11 +26,11 @@ pub fn parse_hex_str(string: &str) -> Result<Vec<u8>, &'static str> {
 }
 
 pub trait HexParseable {
-    fn parse_hex(&self) -> Result<Vec<u8>, &'static str>;
+    fn parse_hex(&self) -> io::Result<Vec<u8>>;
 }
 
 impl HexParseable for str {
-    fn parse_hex(&self) -> Result<Vec<u8>, &'static str> {
+    fn parse_hex(&self) -> io::Result<Vec<u8>> {
         parse_hex_str(self)
     }
 }

@@ -6,11 +6,13 @@ use self::crypto::symmetriccipher::Decryptor;
 
 use util::ioutil;
 
+// SET 1, CHALLENGE 7: http://cryptopals.com/sets/1/challenges/7/
+
 pub fn main() {
     // Using the crypto library because I'm far too lazy to roll out my own AES implementation.
     // Code templated from: https://github.com/DaGenix/rust-crypto/blob/master/examples/symmetriccipher.rs
 
-    let encrypted_data = ioutil::read_file_base64("res/1-7.txt").unwrap();
+    let encrypted_data = ioutil::read_base64("res/1-7.txt").unwrap();
 
     let mut decryptor = aes::ecb_decryptor(
         aes::KeySize::KeySize128,

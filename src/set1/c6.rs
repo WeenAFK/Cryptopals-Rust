@@ -4,9 +4,9 @@ use util::xor;
 // SET 1, CHALLENGE 6: http://cryptopals.com/sets/1/challenges/6/
 
 pub fn main() {
-    let bytes = ioutil::read_file_base64("res/1-6.txt").unwrap();
+    let bytes = ioutil::read_base64("res/1-6.txt").unwrap();
     let (key, plaintext) = xor::decrypt_vigenere(&bytes[0..512]);
-    println!("Key: \"{}\"; plaintext: {}", key, plaintext);
+    println!("CHALLENGE 6: Key: \"{}\"; plaintext: {}", key, plaintext);
 }
 
 #[test]

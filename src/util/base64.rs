@@ -1,13 +1,16 @@
 use std::collections::HashMap;
+use std::io;
+
+use util::ioutil;
 
 pub trait Base64Parseable {
-    fn parse_base64(&self) -> Result<Vec<u8>, &'static str>;
+    fn parse_base64(&self) -> io::Result<Vec<u8>>;
 }
 
 impl Base64Parseable for str {
-    fn parse_base64(&self) -> Result<Vec<u8>, &'static str> {
+    fn parse_base64(&self) -> io::Result<Vec<u8>> {
         if self.len() % 4 != 0 {
-            return Err("Length not a multiple of 4!")
+            return ioutil::err("Length is not a multiple of 4!");
         }
 
         let map = inverse_map();
@@ -27,12 +30,12 @@ impl Base64Parseable for str {
 
                 for i in 0..chars {
                     let val = map.get(&c[i as usize]);
-                    if val.is_none() { return Err("Not a valid Base64 string!"); }
+                    if val.is_none() { return ioutil::err("Not a valid Base64 string!"); }
                     word |= (*val.unwrap() as u32) << (26 - 6*i);
                 }
 
                 Ok(word)
-            }).collect::<Result<Vec<u32>, &'static str>>()
+            }).collect::<io::Result<Vec<u32>>>()
             .map(|words| {
                 let mut vec = Vec::with_capacity(3 * words.len());
                 for word in words {
