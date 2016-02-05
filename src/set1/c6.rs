@@ -1,27 +1,11 @@
-use std::io::prelude::*;
-use std::io::BufReader;
-use std::fs::File;
-
-use util::base64::Base64Parseable;
+use util::ioutil;
 use util::xor;
 
 // SET 1, CHALLENGE 6: http://cryptopals.com/sets/1/challenges/6/
 
-/// An alternative to the try! macro which doesn't require the enclosing function to return a
-/// Result.
-macro_rules! try_unwrap {
-     ($e:expr) => (match $e { Ok(e) => e, Err(_) => return })
-}
-
 pub fn main() {
-    let f = try_unwrap!(File::open("res/1-6.txt"));
-    let reader = BufReader::new(f);
-
-    let input = try_unwrap!(reader.lines().collect::<Result<String, _>>());
-    let bytes = try_unwrap!(input.parse_base64());
-
-    let (key, plaintext) = xor::decrypt_vigenere(&bytes);
-
+    let bytes = ioutil::read_file_base64("res/1-6.txt").unwrap();
+    let (key, plaintext) = xor::decrypt_vigenere(&bytes[0..512]);
     println!("Key: \"{}\"; plaintext: {}", key, plaintext);
 }
 

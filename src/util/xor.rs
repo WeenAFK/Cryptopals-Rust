@@ -26,8 +26,7 @@ pub fn xor<'a, 'b, T, U, I, J>(itr1: I, itr2: J) -> Vec<<T as BitXor<U>>::Output
     itr1.zip(itr2).map(|(a,b)| a ^ b).collect()
 }
 
-/// Returns a None if the inputs are of unequal length. returns a None if the given slices are of
-/// unequal length.
+/// Returns a None if the inputs are of unequal length.
 pub fn hamming_distance(a: &[u8], b: &[u8]) -> Option<u32> {
     if a.len() != b.len() {
         None
@@ -84,7 +83,10 @@ pub fn find_key_size(ciphertext: &[u8]) -> usize {
         .map(|(size,rating)| (size, rating.unwrap()))
         .collect();
     list.sort_by(|&(_,a), &(_,b)| a.partial_cmp(&b).unwrap_or(Ordering::Equal)); // best to worst
-    let mut iter = list.iter().map(|&(size,_)| size);
+
+    let mut iter = list.iter()
+        //.inspect(|&&(size,score)| println!("Size: {}, score: {}", size, score))
+        .map(|&(size,_)| size);
 
     // Some of the best keys may have lengths which are multiples of the true key size (so we may
     // end up with a key with cycling characters). To avoid this, we try to find the gcd of the
