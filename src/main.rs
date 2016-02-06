@@ -29,13 +29,13 @@ fn do_set_1() {
 fn do_set_2() {
     if SET_2 {
         use cryptopals::set2 as s;
-        s::c1::main();
-        s::c2::main();
-        s::c3::main();
-        s::c4::main();
-        s::c5::main();
-        s::c6::main();
-        s::c7::main();
-        s::c8::main();
+        s::c9::main();
+        s::c10::main();
+        s::c11::main();
+        s::c12::main();
+        s::c13::main();
+        s::c14::main();
+        s::c15::main();
+        s::c16::main();
     }
 }

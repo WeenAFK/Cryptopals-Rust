@@ -1,10 +1,12 @@
-pub mod hex;
 pub mod base64;
-pub mod xor;
 pub mod cipher;
 pub mod freq;
-pub mod math;
+pub mod hex;
 pub mod ioutil;
+pub mod math;
+pub mod pad;
+pub mod xor;
+
 
 /*
 /// An alternative to the try! macro which doesn't require the enclosing function to return a
